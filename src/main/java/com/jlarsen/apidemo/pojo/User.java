@@ -6,9 +6,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class User {
 
     private int id;
-    private String first_name;
-    private String last_name;
-    private String email;
+    private String first_name = "";
+    private String last_name = "";
+    private String email = "";
     private long createdAt;
     private long updatedAt;
 
@@ -70,5 +70,15 @@ public class User {
                 ", createdAt='" + createdAt + '\'' +
                 ", updatedAt='" + updatedAt + '\'' +
                 '}';
+    }
+
+    public String toJSON() {
+        return "{\"first_name\" : \"" +
+                first_name +
+                "\", \"last_name\" : \"" +
+                last_name +
+                "\", \"email\" : \"" +
+                email +
+                "\"}";
     }
 }

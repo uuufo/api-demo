@@ -1,9 +1,9 @@
 package com.jlarsen.apidemo.pojo;
 
-public class CodingNomadsResponse<T, E> {
+public class CodingNomadsResponse<T> {
 
     private T data;
-    private E error;
+    private Error error;
     private int statusCode;
 
     public CodingNomadsResponse() {
@@ -17,11 +17,11 @@ public class CodingNomadsResponse<T, E> {
         this.data = data;
     }
 
-    public E getError() {
+    public Error getError() {
         return error;
     }
 
-    public void setError(E error) {
+    public void setError(Error error) {
         this.error = error;
     }
 

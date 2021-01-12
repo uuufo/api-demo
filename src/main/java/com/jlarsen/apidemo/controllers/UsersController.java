@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import sun.awt.image.ImageWatched;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,13 +20,13 @@ public class UsersController {
     RestTemplate restTemplate;
 
     @GetMapping
-    public CodingNomadsResponse<ArrayList<User>, String> getUsers(@RequestParam(required = false, defaultValue = "-1") int count) {
-        CodingNomadsResponse<ArrayList<LinkedHashMap>, String> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
-        CodingNomadsResponse<ArrayList<User>, String> properResponse = fixArray(response);
+    public CodingNomadsResponse<ArrayList<User>> getUsers(@RequestParam(required = false, defaultValue = "-1") int count) {
+        CodingNomadsResponse<ArrayList<LinkedHashMap>> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
+        CodingNomadsResponse<ArrayList<User>> properResponse = fixArray(response);
         if (count < 0) {
             return properResponse;
         }
-        CodingNomadsResponse<ArrayList<User>, String> someUsers = new CodingNomadsResponse<>();
+        CodingNomadsResponse<ArrayList<User>> someUsers = new CodingNomadsResponse<>();
         someUsers.setData(new ArrayList<>());
         someUsers.setError(properResponse.getError());
         someUsers.setStatusCode(properResponse.getStatusCode());
@@ -38,11 +37,13 @@ public class UsersController {
     }
 
     @GetMapping("/{id}")
-    public CodingNomadsResponse<User, String> getUser(@PathVariable int id) {
-        CodingNomadsResponse<LinkedHashMap, String> response = restTemplate.getForObject(url + id, CodingNomadsResponse.class);
+    public CodingNomadsResponse<User> getUser(@PathVariable int id) {
+        CodingNomadsResponse<LinkedHashMap> response = restTemplate.getForObject(url + id, CodingNomadsResponse.class);
         LinkedHashMap user = response.getData();
-        CodingNomadsResponse<User, String> properResponse = new CodingNomadsResponse<>();
-        properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+        CodingNomadsResponse<User> properResponse = new CodingNomadsResponse<>();
+        if (user != null) {
+            properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+        }
         properResponse.setError(response.getError());
         properResponse.setStatusCode(response.getStatusCode());
         return (properResponse);
@@ -50,8 +51,8 @@ public class UsersController {
 
     @GetMapping("/names")
     public ArrayList<String> getNames() {
-        CodingNomadsResponse<ArrayList<LinkedHashMap>, String> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
-        CodingNomadsResponse<ArrayList<User>, String> responseList = fixArray(response);
+        CodingNomadsResponse<ArrayList<LinkedHashMap>> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
+        CodingNomadsResponse<ArrayList<User>> responseList = fixArray(response);
         ArrayList<String> names = new ArrayList<>();
         for (User user : responseList.getData()) {
             names.add(user.getFirst_name() + " " + user.getLast_name());
@@ -60,14 +61,17 @@ public class UsersController {
     }
 
     @PostMapping(value = "/create")
-    public CodingNomadsResponse<User, String> createUser(@RequestBody User user) {
+    public CodingNomadsResponse<User> createUser(@RequestBody User newUser) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<User> httpEntity = new HttpEntity<>(user, headers);
-        CodingNomadsResponse<LinkedHashMap, String>  response = restTemplate.postForObject(url, httpEntity, CodingNomadsResponse.class);
-        LinkedHashMap responseUser = response.getData();
-        CodingNomadsResponse<User, String> properResponse = new CodingNomadsResponse<>();
-        //properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+        HttpEntity<String> httpEntity = new HttpEntity<>(newUser.toJSON(), headers);
+        System.out.println(newUser.toJSON());
+        CodingNomadsResponse<LinkedHashMap> response = restTemplate.postForObject(url, httpEntity, CodingNomadsResponse.class);
+        CodingNomadsResponse<User> properResponse = new CodingNomadsResponse<>();
+        LinkedHashMap user = response.getData();
+        if (user != null) {
+            properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+        }
         properResponse.setError(response.getError());
         properResponse.setStatusCode(response.getStatusCode());
         return properResponse;
@@ -91,8 +95,8 @@ public class UsersController {
         return response;
     }
 
-    public CodingNomadsResponse<ArrayList<User>, String> fixArray(CodingNomadsResponse<ArrayList<LinkedHashMap>, String> response) {
-        CodingNomadsResponse<ArrayList<User>, String> properResponse = new CodingNomadsResponse<>();
+    public CodingNomadsResponse<ArrayList<User>> fixArray(CodingNomadsResponse<ArrayList<LinkedHashMap>> response) {
+        CodingNomadsResponse<ArrayList<User>> properResponse = new CodingNomadsResponse<>();
         properResponse.setData(new ArrayList<>());
         for (LinkedHashMap user : response.getData()) {
             properResponse.getData().add(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
