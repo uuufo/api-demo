@@ -65,7 +65,6 @@ public class UsersController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> httpEntity = new HttpEntity<>(newUser.toJSON(), headers);
-        System.out.println(newUser.toJSON());
         CodingNomadsResponse<LinkedHashMap> response = restTemplate.postForObject(url, httpEntity, CodingNomadsResponse.class);
         CodingNomadsResponse<User> properResponse = new CodingNomadsResponse<>();
         LinkedHashMap user = response.getData();
