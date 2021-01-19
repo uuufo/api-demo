@@ -1,14 +1,16 @@
 package com.jlarsen.apidemo.controllers;
 
+import com.jlarsen.apidemo.exceptions.UserException;
 import com.jlarsen.apidemo.pojo.CodingNomadsResponse;
+import com.jlarsen.apidemo.pojo.Error;
 import com.jlarsen.apidemo.pojo.User;
+import com.jlarsen.apidemo.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 
 @RestController
 @RequestMapping("/users")
@@ -18,65 +20,54 @@ public class UsersController {
 
     @Autowired
     RestTemplate restTemplate;
+    @Autowired
+    UserService userService;
 
     @GetMapping
     public CodingNomadsResponse<ArrayList<User>> getUsers(@RequestParam(required = false, defaultValue = "-1") int count) {
-        CodingNomadsResponse<ArrayList<LinkedHashMap>> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
-        CodingNomadsResponse<ArrayList<User>> properResponse = fixArray(response);
-        if (count < 0) {
-            return properResponse;
+        CodingNomadsResponse<ArrayList<User>> response = new CodingNomadsResponse<>();
+        try {
+            response.setData(userService.getUsers(count));
+            response.setStatusCode(200);
+        } catch (UserException e) {
+            response.setError(new Error (e.getMessage()));
+            response.setStatusCode(500);
         }
-        CodingNomadsResponse<ArrayList<User>> someUsers = new CodingNomadsResponse<>();
-        someUsers.setData(new ArrayList<>());
-        someUsers.setError(properResponse.getError());
-        someUsers.setStatusCode(properResponse.getStatusCode());
-        for (int i = 0; i < count; i++) {
-            someUsers.getData().add(properResponse.getData().get(i));
-        }
-        return someUsers;
+        return response;
     }
 
     @GetMapping("/{id}")
     public CodingNomadsResponse<User> getUser(@PathVariable int id) {
-        CodingNomadsResponse<LinkedHashMap> response = restTemplate.getForObject(url + id, CodingNomadsResponse.class);
-        LinkedHashMap user = response.getData();
-        CodingNomadsResponse<User> properResponse = new CodingNomadsResponse<>();
-        if (user != null) {
-            properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+        CodingNomadsResponse<User> response = new CodingNomadsResponse<>();
+        try {
+            response.setData(userService.getUser(id));
+            response.setStatusCode(200);
+        } catch (UserException e) {
+            response.setError(new Error (e.getMessage()));
+            response.setStatusCode(500);
         }
-        properResponse.setError(response.getError());
-        properResponse.setStatusCode(response.getStatusCode());
-        return (properResponse);
+        return response;
     }
 
     @GetMapping("/names")
     public ArrayList<String> getNames() {
-        CodingNomadsResponse<ArrayList<LinkedHashMap>> response = restTemplate.getForObject(url, CodingNomadsResponse.class);
-        CodingNomadsResponse<ArrayList<User>> responseList = fixArray(response);
-        ArrayList<String> names = new ArrayList<>();
-        for (User user : responseList.getData()) {
-            names.add(user.getFirst_name() + " " + user.getLast_name());
-        }
-        return names;
+        return userService.getNames();
     }
 
-    @PostMapping(value = "/create")
-    public CodingNomadsResponse<User> createUser(@RequestBody User newUser) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> httpEntity = new HttpEntity<>(newUser.toJSON(), headers);
-        CodingNomadsResponse<LinkedHashMap> response = restTemplate.postForObject(url, httpEntity, CodingNomadsResponse.class);
-        CodingNomadsResponse<User> properResponse = new CodingNomadsResponse<>();
-        LinkedHashMap user = response.getData();
-        if (user != null) {
-            properResponse.setData(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
+    @PostMapping //(value = "/create")
+    public CodingNomadsResponse<User> postUser(@RequestBody User newUser) {
+        CodingNomadsResponse<User> response = new CodingNomadsResponse<>();
+        try {
+            response.setData(userService.createUser(newUser));
+            response.setStatusCode(200);
+        } catch (UserException e) {
+            response.setError(new Error (e.getMessage()));
+            response.setStatusCode(500);
         }
-        properResponse.setError(response.getError());
-        properResponse.setStatusCode(response.getStatusCode());
-        return properResponse;
+        return response;
     }
 
-    @PutMapping(value = "/update")
+    @PutMapping //(value = "/update")
     public ResponseEntity<CodingNomadsResponse> updateUser(@RequestBody User user) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -94,14 +85,5 @@ public class UsersController {
         return response;
     }
 
-    public CodingNomadsResponse<ArrayList<User>> fixArray(CodingNomadsResponse<ArrayList<LinkedHashMap>> response) {
-        CodingNomadsResponse<ArrayList<User>> properResponse = new CodingNomadsResponse<>();
-        properResponse.setData(new ArrayList<>());
-        for (LinkedHashMap user : response.getData()) {
-            properResponse.getData().add(new User((int) user.get("id"), user.get("first_name").toString(), user.get("last_name").toString(), user.get("email").toString(), (long) user.get("createdAt"), (long) user.get("updatedAt")));
-        }
-        properResponse.setError(response.getError());
-        properResponse.setStatusCode(response.getStatusCode());
-        return properResponse;
-    }
+
 }
